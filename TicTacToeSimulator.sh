@@ -8,3 +8,17 @@ declare -a gameBoard
 function resetBoard() {
 	gameBoard=(1 2 3 4 5 6 7 8 9)
 }
+
+#!Assigning Letter X or O To Player 
+function assignSignToPlayer() {
+	if [ $((RANDOM % 2)) -eq 1 ]
+	then
+		playerSign='X'
+	else
+		playerSign='O'
+	fi
+	echo $playerSign
+}
+
+resetBoard
+assignSignToPlayer
