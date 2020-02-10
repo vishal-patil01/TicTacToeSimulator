@@ -4,6 +4,7 @@ echo "Welcome To TicTacToe Simulator "
 #!Initializing variable 
 declare -a gameBoard
 playerMoves=0
+playerTurn=0
 
 #!Initializing Constants
 TOTAL_MOVES=9
@@ -28,58 +29,65 @@ function displayBoard() {
 function tossForPlay() {
 	if [ $((RANDOM % 2)) -eq 0 ]
 	then
-		playerSign=X
+		computer=X
+		player=O
 	else
-		playerSign=O
+		player=X
+		computer=O
 	fi
-	echo "Player1 Sign $playerSign"
+	[ $player == X ] && echo "Player play First with X sign" ||  echo "Computer play First With X Sign"
+	[ $player == X ] && playerTurn || computerTurn
+}
+
+#!switching players
+function switchPlayer() {
+	[ $playerTurn == 1 ] && computerTurn || playerTurn
 }
 
 #!User play Function
-function  userPlay() {
+function  playerTurn() {
+	[ ${FUNCNAME[1]} == switchPlayer ] && echo "Player Turn Sign is $player" 
+	playerTurn=1
 	read -p "Enter Position Between 1 to 9 : " position
-	if [[ $position -ge 1 && $position -le 9 ]]
+	if [[ $position -ge 1 && $position -le 9  && $position != ' ' ]]
 	then
-		isPositionOccupy $position
+		isCellEmpty $position $player
 	else
-		echo "Invalid Position out Of Board"
-		userPlay
+		echo "Please Enter Value "
+		playerTurn
 	fi
+}
+
+#!User play Function
+function  computerTurn() {
+	[ ${FUNCNAME[1]} == switchPlayer ] && echo "Computer Turn Sign $computer" 
+	playerTurn=0
+	position=$((RANDOM % 9))
+	isCellEmpty $position $computer
 }
 
 #!checking Position is already filled or blank
-function isPositionOccupy() {
+function isCellEmpty() {
 	local position=$1-1
+	local sign=$2
 	if((${gameBoard[position]}!=X && ${gameBoard[position]}!=O))
 	then
-		gameBoard[$position]=$playerSign
+		gameBoard[$position]=$sign
 		((playerMoves++))
 	else
-		echo "Position is Occupied"
-		userPlay
+		[ ${FUNCNAME[1]} == "playerTurn" ] &&  echo "Position is Occupied"
+		${FUNCNAME[1]}
 	fi
 }
 
-#!Run Game Untill Game Ends And Switching PlayerSign After Winning Check Using Ternary Operator
-function playTillGameEnd() {
-	while [ $playerMoves -lt $TOTAL_MOVES ]
-	do
-		userPlay
-		displayBoard
-		checkWinningCells
-		[ $playerSign == X ] && playerSign=O || playerSign=X
-	done
-	echo "Game Tie...."
-}
-
-#!checking Column,Rows and Diagonals
+#!checking Rows,Rows and Diagonals
 function checkWinningCells() {
 	col=0
-	for((row=0;row<9;row+=3))
+	for((row=0;row<7;row+=3))
 	do
 		checkWinner ${gameBoard[$row]} ${gameBoard[$((row+1))]} ${gameBoard[$((row+2))]}
 		checkWinner ${gameBoard[$col]} ${gameBoard[$((col+3))]} ${gameBoard[$((col+6))]}
-		((col+=2))
+		((col++))
 	done
 		checkWinner ${gameBoard[0]} ${gameBoard[4]} ${gameBoard[8]}
 		checkWinner ${gameBoard[2]} ${gameBoard[4]} ${gameBoard[6]}
@@ -90,13 +98,27 @@ function checkWinner() {
 	local cell1=$1 cell2=$2 cell3=$3
 	if [ $cell1 == $cell2 ] && [ $cell2 == $cell3 ]
 	then
-		echo "Player Win and Have Sign $playerSign"
+		[ $cell1 == $player ] && winner=player || winner=computer
+		echo "$winner Win and Have Sign $cell1"
 		exit
 	fi
 }
 
+#!Run Game By Reseting Board and Run Untill Game Ends And Switching PlayerSign After Winning Check Using Ternary Operator
+function playTillGameEnd() {
+	resetBoard
+	tossForPlay
+	while [ $playerMoves -lt $TOTAL_MOVES ]
+	do
+		clear
+		displayBoard
+		checkWinningCells
+		switchPlayer
+	done
+	displayBoard
+	echo "Game Tie...."
+}
+
 #!Starting Game
-resetBoard
-tossForPlay
 playTillGameEnd
 
