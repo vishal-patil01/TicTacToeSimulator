@@ -15,6 +15,7 @@ function resetBoard() {
 
 #!Displaying GameBoard
 function displayBoard() {
+	clear
 	echo "-------------"
 	for((i=0;i<9;i+=3))
 	do
@@ -38,14 +39,13 @@ function tossForPlay() {
 }
 
 #!switching players
-
 function switchPlayer() {
-	[ $playerTurn == 1 ] && computerTurn || playerTurn
+	[ $currentPlayer == 1 ] && computerTurn || playerTurn
 }
 
 #!User play Function
 function  playerTurn() {
-	playerTurn=1
+	currentPlayer=1
 	[ ${FUNCNAME[1]} == switchPlayer ] && echo "Player Turn Sign is $player" 
 	read -p "Enter Position Between 1 to 9 : " position
 	if [[ $position -ge 1 && $position -le 9  && $position != ' ' ]]
@@ -60,10 +60,11 @@ function  playerTurn() {
 
 #!User play Function
 function  computerTurn() {
-	playerTurn=0
-	flag=0
+	currentPlayer=0
 	checkWinningCells $computer
-	[ $flag == 0  ] && isCellEmpty $((RANDOM % 9)) $computer
+	[ $? == 0  ] && checkWinningCells $player
+	[ $? == 0  ] && isCellEmpty $((RANDOM % 9)) $computer
+	displayBoard
 }
 
 #!checking Position is already filled or blank
@@ -85,12 +86,12 @@ function checkWinningCells() {
 	col=0
 	for((row=0;row<7;row+=3))
 	do
-		[ $flag==0 ] && $command $row $((row+1)) $((row+2)) 
-		[ $flag==0 ] && $command $col $((col+3)) $((col+6)) 
+		[ $?==0 ] && $command $row $((row+1)) $((row+2)) || return 1
+		[ $?==0 ] && $command $col $((col+3)) $((col+6)) || return 1
 		((col++))
 	done
-		[ $flag==0 ] && $command 0 4 8 
-		[ $flag==0 ] && $command 2 4 6 
+		[ $?==0 ] && $command 0 4 8 || return 1 
+		[ $?==0 ] && $command 2 4 6 || return 1
 }
 
 #!checking Winner
@@ -99,13 +100,13 @@ function checkWinner() {
 	if [ ${gameBoard[$cell1]} == ${gameBoard[$cell2]} ] && [ ${gameBoard[$cell2]} == ${gameBoard[$cell3]} ]
 	then
 		[ ${gameBoard[$cell1]} == $player ] && winner=player || winner=computer
-		echo "$winner Win and Have Sign ${gameBoard[$cell1]}"
 		displayBoard
+		echo "$winner Win and Have Sign ${gameBoard[$cell1]}"
 		exit
 	fi
 }
 
-#!Computer Logic Trying To Win
+#!Computer Logic For Self Winning And Blocking Opponent
 function aI() {
 	local cell1=$1 cell2=$2 cell3=$3 
 	for((i=0;i<3;i++))
@@ -114,9 +115,8 @@ function aI() {
 		then
 			gameBoard[$cell3]=$computer
 			checkWinner $cell1 $cell2 $cell3
-			flag=1
 			((playerMoves++))
-			break
+			return 1
 		else
 			eval $(echo cell1=$cell2\;cell2=$cell3\;cell3=$cell1)
 		fi
@@ -129,8 +129,6 @@ function playTillGameEnd() {
 	tossForPlay
 	while [ $playerMoves -lt $TOTAL_MOVES ]
 	do
-		clear
-		displayBoard
 		switchPlayer
 	done
 	displayBoard
