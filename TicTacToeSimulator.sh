@@ -3,10 +3,10 @@ echo "Welcome To TicTacToe Simulator "
 
 #!Initializing variable 
 declare -a gameBoard
-
+playerMoves=0
 #!Initializing Constants
 TOTAL_MOVES=9
-
+flag=0
 #!Resetting Game Board By Initilizing Array With Default Value
 function resetBoard() {
 	gameBoard=(1 2 3 4 5 6 7 8 9)
@@ -15,7 +15,7 @@ function resetBoard() {
 
 #!Displaying GameBoard
 function displayBoard() {
-	clear
+	#clear
 	echo "-------------"
 	for((i=0;i<9;i+=3))
 	do
@@ -63,8 +63,9 @@ function  computerTurn() {
 	playerTurn=0
 	flag=0
 	checkWinningCells $computer
-	[ $flag == 0  ] && checkWinningCells $player
-	[ $flag == 0  ] && isCellEmpty $((RANDOM % 9)) $computer
+	[ $flag == 0 ] && checkWinningCells $player
+	[ $flag == 0 ] && takeCorner
+	[ $flag == 0 ] && isCellEmpty $((RANDOM % 9)) $computer
 	displayBoard
 }
 
@@ -77,7 +78,7 @@ function isCellEmpty() {
 		((playerMoves++))
 	else
 		[ ${FUNCNAME[1]} == "playerTurn" ] &&  echo "Position is Occupied"
-		${FUNCNAME[1]}
+		[ ${FUNCNAME[1]} == "takeCorner" ] && break	 || ${FUNCNAME[1]}
 	fi
 }
 
@@ -91,8 +92,8 @@ function checkWinningCells() {
 		[ $flag==0 ] && $command $col $((col+3)) $((col+6)) 
 		((col++))
 	done
-		[ $flag==0 ] && $command 0 4 8 
-		[ $flag==0 ] && $command 2 4 6 
+		[ $flag==0 ] && $command 0 $((TOTAL_MOVES / 2 )) $((TOTAL_MOVES-1)) 
+		[ $flag==0 ] && $command 2 $((TOTAL_MOVES / 2 )) $((TOTAL_MOVES-2)) 
 }
 
 #!checking Winner
@@ -124,7 +125,18 @@ function aI() {
 		fi
 	done
 }
-
+#!setCorner
+function takeCorner() {
+	for((i=0;i<9;i+=2))
+	do
+		if [[ ${gameBoard[$i]} == *[[:digit:]]* && $i != 4 ]] 
+		then
+			gameBoard[$i]=$computer
+			flag=1
+		 	break
+		fi
+	done
+}
 #!Run Game By Reseting Board and Run Untill Game Ends And Switching PlayerSign After Winning Check Using Ternary Operator
 function playTillGameEnd() {
 	resetBoard
