@@ -1,18 +1,18 @@
 #!/bin/bash 
-echo "Welcome To TicTacToe Simulator "
+echo "Welcome To TicTacToe Simulator"
 
 #!Initializing variable 
 declare -a gameBoard
 
 #!Initializing Constants
-TOTAL_MOVES=9
+BOARD_SIZE=3
+TOTAL_MOVES=$((BOARD_SIZE * BOARD_SIZE))
 
 #!Resetting Game Board By Initilizing Array With Default Value
 function resetBoard() {
 	gameBoard=(1 2 3 4 5 6 7 8 9)
 	displayBoard
 }
-
 #!Displaying GameBoard
 function displayBoard() {
 	clear
@@ -23,7 +23,6 @@ function displayBoard() {
 		echo "-------------"
 	done
 }
-
 #!Assigning Letter X or O To Player and decide who Play First 
 function tossForPlay() {
 	if [ $((RANDOM % 2)) -eq 0 ]
@@ -37,18 +36,16 @@ function tossForPlay() {
 	[ $player == X ] && echo "Player play First with X sign" ||  echo "Computer play First With X Sign"
 	[ $player == X ] && playerTurn || computerTurn
 }
-
 #!switching players
 function switchPlayer() {
-	[ $playerTurn == 1 ] && computerTurn || playerTurn
+	[ $currentPlayer == $player ] && computerTurn || playerTurn
 }
-
 #!User play Function
 function  playerTurn() {
-	playerTurn=1
+	currentPlayer=$player
 	[ ${FUNCNAME[1]} == switchPlayer ] && echo "Player Turn Sign is $player" 
 	read -p "Enter Position Between 1 to 9 : " position
-	if [[ $position -ge 1 && $position -le 9  && $position != ' ' ]]
+	if [[ $position -ge 1 && $position -le 9 && $position != ' ' ]]
 	then
 		isCellEmpty $position $player
 		checkWinningCells
@@ -57,21 +54,19 @@ function  playerTurn() {
 		playerTurn
 	fi
 }
-
-#!User play Function
+#!Computer play Function
 function  computerTurn() {
-	playerTurn=0
+	currentPlayer=$computer
 	checkWinningCells $computer
 	[ $? == 0 ] && checkWinningCells $player
-	[ $? == 0 ] && takeCornerOrCenterPosition
-	[ $? == 0 ] && isCellEmpty $((RANDOM % 9)) $computer
+	[ $? == 0 ] && takeProperPosition 0
+	[ $? == 0 ] && takeProperPosition 1
 	displayBoard
 }
-
 #!checking Position is already filled or blank
 function isCellEmpty() {
 	local position=$1-1 sign=$2
-	if((${gameBoard[position]}!=X && ${gameBoard[position]}!=O))
+	if [[ $position != X && $position != O ]]
 	then
 		gameBoard[$position]=$sign
 		((playerMoves++))
@@ -80,10 +75,9 @@ function isCellEmpty() {
 		${FUNCNAME[1]}
 	fi
 }
-
-#!checking Rows,Rows and Diagonals
+#!checking Rows,Columns and Diagonals for Winning & blocking
 function checkWinningCells() {
-	[ ${FUNCNAME[1]} == "playerTurn" ] &&  command=checkWinner || command=aI; sign=$1;
+	[ ${FUNCNAME[1]} == "playerTurn" ] &&  command=checkWinner || command=computerMoves; sign=$1;
 	col=0
 	for((row=0;row<7;row+=3))
 	do
@@ -91,10 +85,9 @@ function checkWinningCells() {
 		[ $?==0 ] && $command $col $((col+3)) $((col+6)) || return 1
 		((col++))
 	done
-		[ $?==0 ] && $command 0 4 8 || return 1 
-		[ $?==0 ] && $command 2 4 6 || return 1
+		[ $?==0 ] && $command 0 $((BOARD_SIZE+1)) $((TOTAL_MOVES-1)) || return 1 
+		[ $?==0 ] && $command $((BOARD_SIZE-1)) $((BOARD_SIZE+1))  $((TOTAL_MOVES - BOARD_SIZE))  || return 1
 }
-
 #!checking Winner
 function checkWinner() {
 	local cell1=$1 cell2=$2 cell3=$3
@@ -106,9 +99,8 @@ function checkWinner() {
 		exit
 	fi
 }
-
 #!Computer Logic For Self Winning And Blocking Opponent
-function aI() {
+function computerMoves() {
 	local cell1=$1 cell2=$2 cell3=$3 
 	for((i=0;i<3;i++))
 	do
@@ -123,25 +115,25 @@ function aI() {
 		fi
 	done
 }
-#!setCorner
-function takeCornerOrCenterPosition() {
-	for((i=0;i<9;i+=2))
+#!set Mark On Corner or Center or Side if position is vacant
+function takeProperPosition() {
+	local startValue=$1
+	for((i=$startValue;i<9;i+=2))
 	do
-		if [[ ${gameBoard[$i]} == *[[:digit:]]* && $i != 4 ]] 
+		if [[ ${gameBoard[$i]} == [[:digit:]] && $i != 4 ]] 
 		then
 			gameBoard[$i]=$computer
 			((playerMoves++))
 			return 1
 		fi
 	done
-	if [[ ${gameBoard[((TOTAL_Moves / 2 + 1))]} == *[[:digit:]]*  ]]
+	if [[ ${gameBoard[((TOTAL_Moves / 2 + 1))]} == [[:digit:]]  ]]
 		then
 			gameBoard[$i]=$computer
 			((playerMoves++))
 			return 1
 		fi
 }
-
 #!Run Game By Reseting Board and Run Untill Game Ends And Switching PlayerSign After Winning Check Using Ternary Operator
 function playTillGameEnd() {
 	resetBoard
@@ -153,7 +145,6 @@ function playTillGameEnd() {
 	displayBoard
 	echo "Game Tie...."
 }
-
 #!Starting Game
 playTillGameEnd
 
