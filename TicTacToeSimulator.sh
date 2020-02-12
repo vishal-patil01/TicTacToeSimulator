@@ -15,6 +15,7 @@ function resetBoard() {
 
 #!Displaying GameBoard
 function displayBoard() {
+	clear
 	echo "-------------"
 	for((i=0;i<9;i+=3))
 	do
@@ -38,7 +39,6 @@ function tossForPlay() {
 }
 
 #!switching players
-
 function switchPlayer() {
 	[ $playerTurn == 1 ] && computerTurn || playerTurn
 }
@@ -63,7 +63,9 @@ function  computerTurn() {
 	playerTurn=0
 	flag=0
 	checkWinningCells $computer
+	[ $flag == 0  ] && checkWinningCells $player
 	[ $flag == 0  ] && isCellEmpty $((RANDOM % 9)) $computer
+	displayBoard
 }
 
 #!checking Position is already filled or blank
@@ -99,13 +101,13 @@ function checkWinner() {
 	if [ ${gameBoard[$cell1]} == ${gameBoard[$cell2]} ] && [ ${gameBoard[$cell2]} == ${gameBoard[$cell3]} ]
 	then
 		[ ${gameBoard[$cell1]} == $player ] && winner=player || winner=computer
-		echo "$winner Win and Have Sign ${gameBoard[$cell1]}"
 		displayBoard
+		echo "$winner Win and Have Sign ${gameBoard[$cell1]}"
 		exit
 	fi
 }
 
-#!Computer Logic Trying To Win
+#!Computer Logic For Self Winning And Blocking Opponent
 function aI() {
 	local cell1=$1 cell2=$2 cell3=$3 
 	for((i=0;i<3;i++))
@@ -129,8 +131,6 @@ function playTillGameEnd() {
 	tossForPlay
 	while [ $playerMoves -lt $TOTAL_MOVES ]
 	do
-		clear
-		displayBoard
 		switchPlayer
 	done
 	displayBoard
